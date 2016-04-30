@@ -1,6 +1,7 @@
 .DS_Store
 .idea
 client_secrets.json
+analytics.dat
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

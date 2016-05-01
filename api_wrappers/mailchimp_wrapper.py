@@ -3,24 +3,36 @@ import requests
 import json
 import urllib.parse
 
+
 class MailChimpConfig:
-    def __init__(self, credentials_json='../../../settings/credentials.json'):
-        if os.path.isfile(credentials_json) is False:
-            raise SyntaxError("Please enter your API Key into the APIKEY file as mentioned in README.md")
 
-        with open(credentials_json) as json_file:
-            json_data = json.load(json_file)
-            assert 'mailchimp' in json_data
-            assert 'api_key' in json_data['mailchimp']
-            apikey = json_data['mailchimp']['api_key']
 
-            parts = apikey.split('-')
-            if len(parts) != 2:
-                raise SyntaxError("This doesn't look like an API Key: " + apikey)
+    def __init__(self, credentials_json=None, api_key=None):
+        if credentials_json is None and api_key is None:
+            raise ValueError("must pass credentials (json) file or api_key")
 
-            self.apikey = apikey
-            self.shard = parts[1]
-            self.api_root = "https://" + self.shard + ".api.mailchimp.com/3.0/"
+        if api_key is not None:
+            self.api_key, self.shard, self.api_root = MailChimpConfig.get_api_values(api_key)
+
+        else:
+            if os.path.isfile(credentials_json) is False:
+                raise SyntaxError("credentials file not found")
+
+            with open(credentials_json) as json_file:
+                json_data = json.load(json_file)
+                assert 'mailchimp' in json_data
+                assert 'api_key' in json_data['mailchimp']
+                api_key = json_data['mailchimp']['api_key']
+                self.api_key, self.shard, self.api_root = MailChimpConfig.get_api_values(api_key)
+
+    @staticmethod
+    def get_api_values(api_key):
+        parts = api_key.split('-')
+        if len(parts) != 2:
+            raise SyntaxError("This doesn't look like an API Key: " + api_key)
+
+        return api_key, parts[1], "https://" + parts[
+            1] + ".api.mailchimp.com/3.0/"
 
 
 class MailchimpWrapper:
@@ -88,21 +100,21 @@ class MailchimpWrapper:
 
         self.last_params = params # used for testing and so client can get params used
         response = requests.get(endpoint,
-                                auth=('apikey', self.config.apikey),
+                                auth=('apikey', self.config.api_key),
                                 params=params,
                                 verify=False)
 
         response.raise_for_status()
         return response.json()
 
-    def __init__(self, api_file_path='../../../settings/credentials.json'):
-        self.config = MailChimpConfig(credentials_json=api_file_path)
+    def __init__(self, credentials_json=None, api_key=None):
+        self.config = MailChimpConfig(credentials_json=credentials_json, api_key=api_key)
 
     def temp(self):
 
         endpoint = self.config.api_root
 
-        response = requests.get(endpoint, auth=('apikey', self.config.apikey))
+        response = requests.get(endpoint, auth=('apikey', self.config.api_key))
         print(response.url)
 
         try:

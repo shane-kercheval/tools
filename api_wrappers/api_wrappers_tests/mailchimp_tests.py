@@ -4,7 +4,7 @@ from api_wrappers.mailchimp_wrapper import MailchimpWrapper
 
 
 class ItlMailChimp:
-    mc_global = MailchimpWrapper()
+    mc_global = MailchimpWrapper(credentials_json='../../../settings/credentials.json')
 
 
 class MailChimpTests(unittest.TestCase):
